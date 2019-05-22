@@ -142,7 +142,7 @@ function errorAndExit() {
 }
 
 ##
-# Proxy to pipenv which ensures we have all dependencies installed 
+# Proxy to pipenv which ensures we have all dependencies installed
 # before calling pipenv for the first time.
 ##
 function pipenv() {
@@ -154,7 +154,7 @@ function pipenv() {
         # no venv created yet, attempt to create one (first time install)
         rm -f "${pipenvLogPath}"
 
-        "${pipenvBinPath}" install &> "${pipenvLogPath}" || {
+        "${pipenvBinPath}" install -d &> "${pipenvLogPath}" || {
             errorAndExit "Error installing Pipfile:\n$(<${pipenvLogPath})"
         }
     }
