@@ -1,0 +1,7 @@
+.volumes
+.DS_STORE
+*.log
+
+# auto-generated config files
+serverless-env/config/lambda-alb/config.json
+serverless-env/config/lambda-logger/config.env

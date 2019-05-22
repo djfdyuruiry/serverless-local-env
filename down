@@ -1,0 +1,32 @@
+#! /usr/bin/env bash
+set -e
+
+scriptPath=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+. "${scriptPath}/scripts/common.sh" "$@"
+
+function stopScope() {
+    if ! commandIsInstalled "scope"; then
+        logTrace "Weave Scope not installed, skipping stop"
+        return
+    fi
+
+    logInfo "Stopping Weave Scope"
+
+    scope stop
+}
+
+function down() {
+    displayLogo
+
+    logWarn "❗Clearing lambda containers and stopping docker services"
+
+    clearDownLambdaContainers
+    docker-compose down --remove-orphans
+
+    stopScope
+
+    logInfo "✅ Finished"
+}
+
+down "$@"

@@ -1,0 +1,44 @@
+#! /usr/bin/env bash
+set -e
+
+scriptPath=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+# extra options for this script
+options=$(cat <<EOM 
+    --clean-env        Clear down lambdas, docker containers and volumes (implies --clean-aws)
+    --clean-images     Rebuild custom images
+    --clean-aws        Clear down localstack volume and container (implies --clean-resources and --clean-functions)
+    --clean-resources  Recreate existing AWS resources
+    --clean-functions  Redeploy existing lambda functions
+EOM
+)
+
+. "${scriptPath}/scripts/common.sh" "$@" "${options}"
+
+function startScope() {
+    if ! commandIsInstalled "scope"; then
+        logTrace "Weave Scope not installed, skipping start"
+        return
+    fi
+
+    logWarn "Stopping Weave Scope, if started"
+
+    scope stop
+
+    logInfo "Starting Weave Scope"
+
+    scope launch
+}
+
+function up() {
+    displayLogo
+
+    displayHelpIfRequested "$@"
+
+    startScope
+
+    "${scriptsPath}/build-custom-images.sh" "$@"
+    "${scriptsPath}/up-env.sh" "$@"
+}
+
+up "$@"

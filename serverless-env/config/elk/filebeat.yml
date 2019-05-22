@@ -1,0 +1,15 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/serverless/docker/*.log
+    # log events always start with a ISO8601 datetime
+    multiline.pattern: '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}.\d{3}[Z ]*'
+    multiline.negate: true
+    multiline.match: after
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/serverless/lambda/*.log
+output.logstash:
+  hosts: [ "logstash:5044" ]
