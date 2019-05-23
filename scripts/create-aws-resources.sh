@@ -25,6 +25,29 @@ export AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY
 export AWS_DEFAULT_REGION
 
+function createDynamoTableIfMissing() {
+    tableName="$1"
+
+    if echo "$(awslocal dynamodb list-tables)" | grep -q "${tableName}"; then
+        if [ "${cleanExistingResources}" = false ]; then
+            logWarn "DynamoDB table '${tableName}' already exists"
+            return
+        fi
+
+        logWarn "Deleting DynamoDB table '${tableName}'"
+
+        awslocal dynamodb delete-table --table-name "${tableName}"
+    fi
+
+    logInfo "Creating DyanmoDB table: ${tableName}"
+
+    awslocal dynamodb create-table \
+        --table-name "${tableName}" \
+        --attribute-definitions "AttributeName=id,AttributeType=S" \
+        --key-schema "AttributeName=id,KeyType=HASH" \
+        --billing-mode "PAY_PER_REQUEST"
+}
+
 function createSqsSubscriptionToSnsTopicIfMissing() {
     sqsQueueName="$1"
     snsTopicName="$2"
@@ -34,11 +57,11 @@ function createSqsSubscriptionToSnsTopicIfMissing() {
 
     if echo "$(awslocal sns list-subscriptions)" | grep -q "${sqsQueueArn}"; then
         if [ "${cleanExistingResources}" = false ]; then
-            logWarn "SNS subscription for queue '${sqsQueueName}' to topic '${snsTopicName}' already exists"
+            logWarn "SNS subscription for SQS queue '${sqsQueueName}' to topic '${snsTopicName}' already exists"
             return
         fi
 
-        logWarn "Unsubscribing queue '${sqsQueueName}' from SNS topic: ${snsTopicName}"
+        logWarn "Unsubscribing SQSQ queue '${sqsQueueName}' from SNS topic: ${snsTopicName}"
 
         subscriptionArn=$(awslocal sns list-subscriptions-by-topic --topic-arn "${snsTopicArn}" | grep -A 2 "${sqsQueueArn}" | tail -n 1)
         subscriptionArn=${subscriptionArn/            \"TopicArn\": \"/}
@@ -49,7 +72,7 @@ function createSqsSubscriptionToSnsTopicIfMissing() {
         awslocal sns unsubscribe --subscription-arn "${subscriptionArn}"
     fi
 
-    logInfo "Subscribing queue '${sqsQueueName}' to SNS topic: ${snsTopicName}"
+    logInfo "Subscribing SQS queue '${sqsQueueName}' to SNS topic: ${snsTopicName}"
 
     awslocal sns subscribe \
         --topic-arn "${snsTopicArn}" \
@@ -157,6 +180,10 @@ function createAwsResources() {
     # add subscriptions for SNS testing/debug SQS queues here 
     # createSqsSubscriptionToSnsTopicIfMissing "${snsTestingQueue}" "?"
     # createSqsSubscriptionToSnsTopicIfMissing "${snsDebugQueue}" "?"
+
+    for table in ${dynamoTables//,/ }; do
+        createDynamoTableIfMissing "${table}"
+    done
 
     logInfo "✅ Done\n"
 }

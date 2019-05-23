@@ -50,7 +50,7 @@ services:
       - 4586:4586   # CloudWatch Logs
       - 4592:4592   # STS
       - 4593:4593   # IAM
-      - 8080:8080   # localstack dashboard
+      - 10000:8080   # localstack dashboard
     environment:
       DEFAULT_REGION: eu-west-1
       DATA_DIR: /tmp/localstack/data
